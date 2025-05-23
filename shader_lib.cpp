@@ -1,6 +1,9 @@
 
+#include <cassert>
 #include <cstdint>
 #include <fstream>
+#include <iostream>
+#include <sstream>
 
 #pragma pack(push, 1) // Ensure no padding
 
@@ -59,4 +62,50 @@ void WriteBMP(const char* filename, int width, int height, const uint8_t* pixelD
     }
 
     file.close();
+}
+
+void makeSwizzlers(uint thisVecSize, uint outVecSize)
+{
+    assert(thisVecSize <= 4 && outVecSize <= 4);
+    const char lut_xyzw[] = "xyzw";
+    const char lut_rgba[] = "rgba";
+    const char lut_stpq[] = "stpq";
+
+    std::stringstream ss;
+
+    const uint iterations[4] { thisVecSize,
+        outVecSize >= 2 ? thisVecSize : 1,
+        outVecSize >= 3 ? thisVecSize : 1,
+        outVecSize >= 4 ? thisVecSize : 1 };
+
+    ss << "iterations: " << iterations[0] << ", " << iterations[1]
+       << ", " << iterations[2] << ", " << iterations[3] << '\n';
+
+    for (int a = 0; a < iterations[0]; ++a) {
+        for (int b = 0; b < iterations[1]; ++b) {
+            for (int c = 0; c < iterations[2]; ++c) {
+                for (int d = 0; d < iterations[3]; ++d) {
+                    int buf[4] { a, b, c, d };
+
+                    ss << "Swiz" << outVecSize << "<" << thisVecSize;
+                    for (int i = 0; i < outVecSize; ++i)
+                        ss << ", " << buf[i];
+                    ss << "> ";
+                    for (int i = 0; i < outVecSize; ++i)
+                        ss << lut_xyzw[buf[i]];
+                    ss << ", ";
+                    for (int i = 0; i < outVecSize; ++i)
+                        ss << lut_rgba[buf[i]];
+                    ss << ", ";
+                    for (int i = 0; i < outVecSize; ++i)
+                        ss << lut_stpq[buf[i]];
+                    ss << ";\n";
+                }
+            }
+        }
+    }
+
+    std::cout << ss.str() << std::endl;
+
+    exit(0);
 }

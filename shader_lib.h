@@ -8,16 +8,7 @@
 #include <cstdio>
 
 void WriteBMP(const char* filename, int width, int height, const uint8_t* pixelData);
-
-template <typename T, std::size_t N>
-constexpr bool areSwizzlersUnique(const T (&arr)[N])
-{
-    for (std::size_t i = 0; i < N; ++i)
-        for (std::size_t j = i + 1; j < N; ++j)
-            if (arr[i] == arr[j])
-                return false;
-    return true;
-}
+void makeSwizzlers(uint thisVecSize, uint outVecSize);
 
 #define LIB_UNREAL 0
 #define LIB_STD 1
@@ -43,17 +34,17 @@ constexpr bool areSwizzlersUnique(const T (&arr)[N])
 #if defined(_MSC_VER)
 #define FORCEINLINE __forceinline
 #elif defined(__GNUC__) || defined(__clang__)
-// #define FORCEINLINE inline __attribute__((always_inline))
-#define FORCEINLINE
+#define FORCEINLINE inline __attribute__((always_inline))
+// #define FORCEINLINE
 #else
 #define FORCEINLINE inline
 #endif
 
 #define CLAMP_IMPL(x, a, b) std::clamp(x, a, b)
 #define FLOORF_IMPL(x) floorf(x)
-float FRAC_IMPL(float x) { return x - floorf(x); }
+FORCEINLINE float FRAC_IMPL(float x) { return x - floorf(x); }
 template <typename T>
-T LERP_IMPL(T a, T b, T x) { return a + (b - a) * x; }
+FORCEINLINE T LERP_IMPL(T a, T b, T x) { return a + (b - a) * x; }
 #define ABS_IMPL(x) std::abs(x)
 #define MIN_IMPL(a, b) std::min(a, b)
 #define MAX_IMPL(a, b) std::max(a, b)
@@ -72,6 +63,16 @@ T LERP_IMPL(T a, T b, T x) { return a + (b - a) * x; }
 #define VECTOR4 vec4
 #define FRAC fract // glsl: fract(), hlsl: frac()
 #endif
+
+template <typename T, std::size_t N>
+constexpr bool areSwizzlersUnique(const T (&arr)[N])
+{
+    for (std::size_t i = 0; i < N; ++i)
+        for (std::size_t j = i + 1; j < N; ++j)
+            if (arr[i] == arr[j])
+                return false;
+    return true;
+}
 
 // clang-format off
 struct VECTOR2;
@@ -191,13 +192,13 @@ struct VECTOR3 {
         Swiz3<3, 0, 1, 2> xyz, rgb;
     };
 
-    VECTOR3() {} // uninitialized
-    constexpr VECTOR3(float f) : x(f), y(f), z(f) {}
-    constexpr VECTOR3(float f, const VECTOR2& v2) : x(f), y(v2.x), z(v2.y) {}
-    constexpr VECTOR3(const VECTOR2& v2, float f) : x(v2.x), y(v2.y), z(f) {}
-    constexpr VECTOR3(float x, float y, float z) : x(x), y(y), z(z) {}
+    FORCEINLINE VECTOR3() {} // uninitialized
+    constexpr FORCEINLINE VECTOR3(float f) : x(f), y(f), z(f) {}
+    constexpr FORCEINLINE VECTOR3(float f, const VECTOR2& v2) : x(f), y(v2.x), z(v2.y) {}
+    constexpr FORCEINLINE VECTOR3(const VECTOR2& v2, float f) : x(v2.x), y(v2.y), z(f) {}
+    constexpr FORCEINLINE VECTOR3(float x, float y, float z) : x(x), y(y), z(z) {}
     template<int Size, int X, int Y, int Z>
-    VECTOR3(const Swiz3<Size, X, Y, Z>& s) : VECTOR3(s.m[X], s.m[Y], s.m[Z]) {}
+    FORCEINLINE VECTOR3(const Swiz3<Size, X, Y, Z>& s) : VECTOR3(s.m[X], s.m[Y], s.m[Z]) {}
 
 #if LIB_CURRENT_CONTEXT == LIB_UNREAL
     explicit VECTOR3(const FVector3f& u) : x(u.X), y(u.Y), z(u.Z) {}
@@ -354,15 +355,14 @@ FORCEINLINE VECTOR4 cos(const VECTOR4& v) { return VECTOR4(std::cos(v.x), std::c
 
 FORCEINLINE float  atan(float x, float y) { return std::atan2(x, y); }
 
-// clang-format on
+
 
 struct mat3 {
-    mat3(float f0, float f1, float f2, float f3, float f4, float f5, float f6, float f7, float f8)
-    {
+    FORCEINLINE mat3(float f0, float f1, float f2, float f3, float f4, float f5, float f6, float f7, float f8) {
         m[0] = vec3(f0, f1, f2), m[1] = vec3(f3, f4, f5), m[2] = vec3(f6, f7, f8);
     }
-    mat3(const VECTOR3& a, const VECTOR3& b, const VECTOR3& c)
-    {
+
+    FORCEINLINE mat3(const VECTOR3& a, const VECTOR3& b, const VECTOR3& c) {
         m[0] = a, m[1] = b, m[2] = c;
     }
 
@@ -373,21 +373,23 @@ private:
     VECTOR3 m[3];
 };
 
-vec3 operator*(const mat3& m, const vec3& v)
+FORCEINLINE VECTOR3 operator*(const mat3& m, const VECTOR3& v)
 {
-    return vec3(
+    return VECTOR3(
         m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z,
         m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z,
         m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z);
 }
 
+// clang-format on
+
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
 #define PRECISION .3
-void print(float f) { printf("%" STR(PRECISION) "f\n", f); }
-void print(VECTOR2 f) { printf("%" STR(PRECISION) "f, %" STR(PRECISION) "f\n", f.x, f.y); }
-void print(VECTOR3 f) { printf("%" STR(PRECISION) "f, %" STR(PRECISION) "f, %" STR(PRECISION) "f\n", f.x, f.y, f.z); }
-void print(VECTOR4 f) { printf("%" STR(PRECISION) "f, %" STR(PRECISION) "f, %" STR(PRECISION) "f, %" STR(PRECISION) "f\n", f.x, f.y, f.z, f.w); }
+static void print(float f) { printf("%" STR(PRECISION) "f\n", f); }
+static void print(VECTOR2 f) { printf("%" STR(PRECISION) "f, %" STR(PRECISION) "f\n", f.x, f.y); }
+static void print(VECTOR3 f) { printf("%" STR(PRECISION) "f, %" STR(PRECISION) "f, %" STR(PRECISION) "f\n", f.x, f.y, f.z); }
+static void print(VECTOR4 f) { printf("%" STR(PRECISION) "f, %" STR(PRECISION) "f, %" STR(PRECISION) "f, %" STR(PRECISION) "f\n", f.x, f.y, f.z, f.w); }
 
 #endif // SHADER_LIB_H

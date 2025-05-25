@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(ShaderEmul main.cpp
-    shader_lib.h shader_lib.cpp)
+    shader_lib.h utils.h utils.cpp)
 
 include(GNUInstallDirs)
 install(TARGETS ShaderEmul

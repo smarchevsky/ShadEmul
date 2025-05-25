@@ -1,3 +1,4 @@
+#include "utils.h"
 
 #include <cassert>
 #include <cstdint>
@@ -5,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 
+namespace Utils {
 #pragma pack(push, 1) // Ensure no padding
 
 struct BMPFileHeader {
@@ -108,4 +110,5 @@ void makeSwizzlers(uint thisVecSize, uint outVecSize)
     std::cout << ss.str() << std::endl;
 
     exit(0);
+}
 }

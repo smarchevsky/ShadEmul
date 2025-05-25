@@ -25,9 +25,6 @@
 #define ENABLE_SWIZZLERS_44 1
 #endif
 
-void WriteBMP(const char* filename, int width, int height, const uint8_t* pixelData);
-void makeSwizzlers(uint thisVecSize, uint outVecSize);
-
 #define LIB_UNREAL 0
 #define LIB_STD 1
 #define LIB_CURRENT_CONTEXT LIB_STD
@@ -143,6 +140,7 @@ private:
 struct VECTOR2 {
     union {
         struct { float x, y; }; struct { float r, g; };
+
         Swiz2<2, 0, 0> xx, rr, ss;
         Swiz2<2, 0, 1> xy, rg, st;
         Swiz2<2, 1, 0> yx, gr, ts;
@@ -222,6 +220,7 @@ struct VECTOR3 {
 #if ENABLE_SWIZZLERS_33
 #include "swizzlers/swizzlers_33.h"
 #endif
+
 #if ENABLE_SWIZZLERS_34
 #include "swizzlers/swizzlers_34.h"
 #endif
@@ -283,6 +282,7 @@ struct VECTOR4 {
 #if ENABLE_SWIZZLERS_43
 #include "swizzlers/swizzlers_43.h"
 #endif
+
 #if ENABLE_SWIZZLERS_44
 #include "swizzlers/swizzlers_44.h"
 #endif
@@ -486,7 +486,10 @@ FORCEINLINE VECTOR3 operator*(const mat3& m, const VECTOR3& v)
         m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z);
 }
 
+// hash functions for unordered map
 #include <functional>
+
+namespace std {
 template <typename T, typename... Rest>
 void hash_combine(std::size_t& seed, const T& v, const Rest&... rest)
 {
@@ -494,13 +497,29 @@ void hash_combine(std::size_t& seed, const T& v, const Rest&... rest)
     (hash_combine(seed, rest), ...);
 }
 
-namespace std {
-template <>
-struct hash<vec3> {
-    std::size_t operator()(const vec3& v) const
+template <> struct hash<VECTOR2> {
+    std::size_t operator()(const VECTOR2& v) const
+    {
+        size_t seed = 0;
+        hash_combine(seed, v.x, v.y);
+        return seed;
+    }
+};
+
+template <> struct hash<VECTOR3> {
+    std::size_t operator()(const VECTOR3& v) const
     {
         size_t seed = 0;
         hash_combine(seed, v.x, v.y, v.z);
+        return seed;
+    }
+};
+
+template <> struct hash<VECTOR4> {
+    std::size_t operator()(const VECTOR4& v) const
+    {
+        size_t seed = 0;
+        hash_combine(seed, v.x, v.y, v.z, v.w);
         return seed;
     }
 };

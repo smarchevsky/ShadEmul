@@ -4,7 +4,6 @@
 #include <algorithm> // std::clamp
 #include <cassert>
 #include <cmath> // floorf
-#include <cstdint>
 
 // swizzlers are .xyz .zyyy things
 // there are a lot of combinations (swizzlers_44, it contains 256 of them)
@@ -92,7 +91,7 @@ constexpr bool areSwizzlersUnique(const T (&arr)[N])
 // clang-format off
 
 struct VECTOR2;
-template<int Size, int X, int Y>
+template<uint Size, uint X, uint Y>
 struct Swiz2 {
     Swiz2() = delete;
     Swiz2& operator=(const VECTOR2& v);
@@ -107,7 +106,7 @@ private:
 };
 
 struct VECTOR3;
-template<int Size, int X, int Y, int Z>
+template<uint Size, uint X, uint Y, uint Z>
 struct Swiz3 {
     Swiz3() = delete;
     Swiz3& operator=(const VECTOR3& v);
@@ -121,7 +120,7 @@ private:
 };
 
 struct VECTOR4;
-template<int Size, int X, int Y, int Z, int W>
+template<uint Size, uint X, uint Y, uint Z, uint W>
 struct Swiz4 {
     Swiz4() = delete;
     Swiz4& operator=(const  VECTOR4& v);
@@ -175,7 +174,7 @@ struct VECTOR2 {
 
     constexpr VECTOR2(float f) : x(f), y(f) {}
     constexpr VECTOR2(float x, float y) : x(x), y(y) {}
-    template<int Size, int X, int Y> VECTOR2(const Swiz2<Size, X, Y>& s) : VECTOR2(s.m[X], s.m[Y]) {}
+    template<uint Size, uint X, uint Y> VECTOR2(const Swiz2<Size, X, Y>& s) : VECTOR2(s.m[X], s.m[Y]) {}
 #if LIB_UNREAL
     VECTOR2(const FVector2f& u) : x(u.X), y(u.Y) {}
 #endif
@@ -231,7 +230,7 @@ struct VECTOR3 {
     constexpr FORCEINLINE VECTOR3(float f, const VECTOR2& v2) : x(f), y(v2.x), z(v2.y) {}
     constexpr FORCEINLINE VECTOR3(const VECTOR2& v2, float f) : x(v2.x), y(v2.y), z(f) {}
     constexpr FORCEINLINE VECTOR3(float x, float y, float z) : x(x), y(y), z(z) {}
-    template<int Size, int X, int Y, int Z>
+    template<uint Size, uint X, uint Y, uint Z>
     FORCEINLINE VECTOR3(const Swiz3<Size, X, Y, Z>& s) : VECTOR3(s.m[X], s.m[Y], s.m[Z]) {}
 
 #if LIB_CURRENT_CONTEXT == LIB_UNREAL
@@ -293,7 +292,7 @@ struct VECTOR4 {
     constexpr VECTOR4(float f, const VECTOR3& v3) : x(f), y(v3.x), z(v3.y), w(v3.z) {}
     constexpr VECTOR4(const VECTOR2& v21, const VECTOR2& v22) : x(v21.x), y(v21.y), z(v22.x), w(v22.y) {}
     constexpr VECTOR4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
-    template<int Size, int X, int Y, int Z, int W>
+    template<uint Size, uint X, uint Y, uint Z, uint W>
     FORCEINLINE VECTOR4(const Swiz4<Size, X, Y, Z, W>& s) : VECTOR4(s.m[X], s.m[Y], s.m[Z], s.m[W]) {}
 
 #if LIB_CURRENT_CONTEXT == LIB_UNREAL
@@ -324,15 +323,15 @@ static_assert(sizeof(VECTOR4) == 4 * sizeof(float));
 
 // SWIZZLE 2 FUNCTIONS
 
-template<int Size, int X, int Y>
+template<uint Size, uint X, uint Y>
 FORCEINLINE Swiz2<Size, X, Y>& Swiz2<Size, X, Y>::operator=(const VECTOR2& v) {
     static_assert(areSwizzlersUnique({ X, Y })); m[X] = v.x, m[Y] = v.y; return *this;
 }
 
 #define SHADER_MATH_DECLARE_SWIZZLE_OPERATOR_VECTOR2(op) \
-template<int Size, int X, int Y> FORCEINLINE VECTOR2 operator op(const Swiz2<Size, X, Y>& s, const VECTOR2& f) { return VECTOR2(s) op f; } \
-template<int Size, int X, int Y> FORCEINLINE VECTOR2 operator op(float f, const Swiz2<Size, X, Y>& s) { return VECTOR2(f) op VECTOR2(s); } \
-template<int Size, int X, int Y> Swiz2<Size, X, Y>& Swiz2<Size, X, Y>::operator op##=(const VECTOR2& v) \
+template<uint Size, uint X, uint Y> FORCEINLINE VECTOR2 operator op(const Swiz2<Size, X, Y>& s, const VECTOR2& f) { return VECTOR2(s) op f; } \
+template<uint Size, uint X, uint Y> FORCEINLINE VECTOR2 operator op(float f, const Swiz2<Size, X, Y>& s) { return VECTOR2(f) op VECTOR2(s); } \
+template<uint Size, uint X, uint Y> Swiz2<Size, X, Y>& Swiz2<Size, X, Y>::operator op##=(const VECTOR2& v) \
 { static_assert(areSwizzlersUnique({ X, Y })); m[X] op##= v.x; m[Y] op##= v.y; return *this; }
 
 SHADER_MATH_DECLARE_SWIZZLE_OPERATOR_VECTOR2(+)
@@ -343,15 +342,15 @@ SHADER_MATH_DECLARE_SWIZZLE_OPERATOR_VECTOR2(/)
 
 // SWIZZLE 3 FUNCTIONS
 
-template <int Size, int X, int Y, int Z>
+template <uint Size, uint X, uint Y, uint Z>
 FORCEINLINE Swiz3<Size, X, Y, Z>& Swiz3<Size, X, Y, Z>::operator=(const VECTOR3& v) {
     static_assert(areSwizzlersUnique({ X, Y, Z })); m[X] = v.x, m[Y] = v.y, m[Z] = v.z; return *this;
 }
 
 #define SHADER_MATH_DECLARE_SWIZZLE_OPERATOR_VECTOR3(op) \
-template<int Size, int X, int Y, int Z> FORCEINLINE VECTOR3 operator op(const Swiz3<Size, X, Y, Z>& s, const VECTOR3& f) { return VECTOR3(s) op f; } \
-template<int Size, int X, int Y, int Z> FORCEINLINE VECTOR3 operator op(float f, const Swiz3<Size, X, Y, Z>& s) { return VECTOR3(f) op VECTOR3(s); } \
-template<int Size, int X, int Y, int Z> Swiz3<Size, X, Y, Z>& Swiz3<Size, X, Y, Z>::operator op##=(const VECTOR3& v) \
+template<uint Size, uint X, uint Y, uint Z> FORCEINLINE VECTOR3 operator op(const Swiz3<Size, X, Y, Z>& s, const VECTOR3& f) { return VECTOR3(s) op f; } \
+template<uint Size, uint X, uint Y, uint Z> FORCEINLINE VECTOR3 operator op(float f, const Swiz3<Size, X, Y, Z>& s) { return VECTOR3(f) op VECTOR3(s); } \
+template<uint Size, uint X, uint Y, uint Z> Swiz3<Size, X, Y, Z>& Swiz3<Size, X, Y, Z>::operator op##=(const VECTOR3& v) \
 { static_assert(areSwizzlersUnique({ X, Y, Z })); m[X] op##= v.x; m[Y] op##= v.y; m[Z] op##= v.z; return *this; }
 
 SHADER_MATH_DECLARE_SWIZZLE_OPERATOR_VECTOR3(+)
@@ -362,15 +361,15 @@ SHADER_MATH_DECLARE_SWIZZLE_OPERATOR_VECTOR3(/)
 
 // SWIZZLE 4 FUNCTIONS
 
-template <int Size, int X, int Y, int Z, int W>
+template <uint Size, uint X, uint Y, uint Z, uint W>
 FORCEINLINE Swiz4<Size, X, Y, Z, W>& Swiz4<Size, X, Y, Z, W>::operator=(const VECTOR4& v) {
     static_assert(areSwizzlersUnique({ X, Y, Z, W })); m[X] = v.x, m[Y] = v.y, m[Z] = v.z; return *this;
 }
 
 #define SHADER_MATH_DECLARE_SWIZZLE_OPERATOR_VECTOR4(op) \
-template<int Size, int X, int Y, int Z, int W> FORCEINLINE VECTOR4 operator op(const Swiz4<Size, X, Y, Z, W>& s, const VECTOR4& f) { return VECTOR4(s) op f; } \
-template<int Size, int X, int Y, int Z, int W> FORCEINLINE VECTOR4 operator op(float f, const Swiz4<Size, X, Y, Z, W>& s) { return VECTOR4(f) op VECTOR4(s); } \
-template<int Size, int X, int Y, int Z, int W> Swiz4<Size, X, Y, Z, W>& Swiz4<Size, X, Y, Z, W>::operator op##=(const VECTOR4& v) \
+template<uint Size, uint X, uint Y, uint Z, uint W> FORCEINLINE VECTOR4 operator op(const Swiz4<Size, X, Y, Z, W>& s, const VECTOR4& f) { return VECTOR4(s) op f; } \
+template<uint Size, uint X, uint Y, uint Z, uint W> FORCEINLINE VECTOR4 operator op(float f, const Swiz4<Size, X, Y, Z, W>& s) { return VECTOR4(f) op VECTOR4(s); } \
+template<uint Size, uint X, uint Y, uint Z, uint W> Swiz4<Size, X, Y, Z, W>& Swiz4<Size, X, Y, Z, W>::operator op##=(const VECTOR4& v) \
 { static_assert(areSwizzlersUnique({ X, Y, Z, W })); m[X] op##= v.x; m[Y] op##= v.y; m[Z] op##= v.z; return *this; }
 
 SHADER_MATH_DECLARE_SWIZZLE_OPERATOR_VECTOR4(+)
@@ -471,8 +470,8 @@ struct mat3 {
         m[0] = a, m[1] = b, m[2] = c;
     }
 
-    FORCEINLINE VECTOR3& operator[](int i) { return m[i]; }
-    FORCEINLINE const VECTOR3& operator[](int i) const { return m[i]; }
+    FORCEINLINE VECTOR3& operator[](uint i) { return m[i]; }
+    FORCEINLINE const VECTOR3& operator[](uint i) const { return m[i]; }
 
 private:
     VECTOR3 m[3];

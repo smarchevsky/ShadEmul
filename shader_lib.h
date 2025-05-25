@@ -5,7 +5,6 @@
 #include <cassert>
 #include <cmath> // floorf
 #include <cstdint>
-#include <cstdio>
 
 void WriteBMP(const char* filename, int width, int height, const uint8_t* pixelData);
 void makeSwizzlers(uint thisVecSize, uint outVecSize);
@@ -381,12 +380,34 @@ FORCEINLINE VECTOR3 operator*(const mat3& m, const VECTOR3& v)
         m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z);
 }
 
+#include <functional>
+template <typename T, typename... Rest>
+void hash_combine(std::size_t& seed, const T& v, const Rest&... rest)
+{
+    seed ^= std::hash<T> {}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    (hash_combine(seed, rest), ...);
+}
+
+namespace std {
+template <>
+struct hash<vec3> {
+    std::size_t operator()(const vec3& v) const
+    {
+        size_t seed = 0;
+        hash_combine(seed, v.x, v.y, v.z);
+        return seed;
+    }
+};
+}
+
 // clang-format on
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
 #define PRECISION .3
+
+#include <cstdio>
 static void print(float f) { printf("%" STR(PRECISION) "f\n", f); }
 static void print(VECTOR2 f) { printf("%" STR(PRECISION) "f, %" STR(PRECISION) "f\n", f.x, f.y); }
 static void print(VECTOR3 f) { printf("%" STR(PRECISION) "f, %" STR(PRECISION) "f, %" STR(PRECISION) "f\n", f.x, f.y, f.z); }

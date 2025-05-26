@@ -151,6 +151,7 @@ struct Vector2_base {
         Swiz4<T, 2, 1, 1, 1, 1> yyyy, gggg, tttt;
     };
 
+    Vector2_base() {}
     constexpr Vector2_base(T f) : x(f), y(f) {}
     constexpr Vector2_base(T x, T y) : x(x), y(y) {}
     template <uint Size, uint X, uint Y> Vector2_base(const Swiz2<T, Size, X, Y>& s) : Vector2_base(s.m[X], s.m[Y]) {}
@@ -210,7 +211,7 @@ struct Vector3_base {
 #endif
     };
 
-    FORCEINLINE Vector3_base() { } // uninitialized
+    Vector3_base() {}
     constexpr FORCEINLINE Vector3_base(T f): x(f), y(f), z(f) {}
     constexpr FORCEINLINE Vector3_base(T f, const Vector2_base<T>& v2) : x(f), y(v2.x), z(v2.y) {}
     constexpr FORCEINLINE Vector3_base(const Vector2_base<T>& v2, T f) : x(v2.x), y(v2.y), z(f) {}
@@ -281,6 +282,7 @@ struct Vector4_base {
 #endif
     };
 
+    Vector4_base() {}
     constexpr Vector4_base(T f) : x(f) , y(f), z(f), w(f) {}
     constexpr Vector4_base(const Vector3_base<T>& v3, T f) : x(v3.x), y(v3.y), z(v3.z), w(f) {}
     constexpr Vector4_base(T f, const Vector3_base<T>& v3) : x(f), y(v3.x), z(v3.y), w(v3.z) {}
@@ -529,6 +531,11 @@ FORCEINLINE float               abs(const float v) { return ABS_IMPL(v); }
 FORCEINLINE Vector2_base<float> abs(const Vector2_base<float>& v) { return Vector2_base<float>(ABS_IMPL(v.x), ABS_IMPL(v.y)); }
 FORCEINLINE Vector3_base<float> abs(const Vector3_base<float>& v) { return Vector3_base<float>(ABS_IMPL(v.x), ABS_IMPL(v.y), ABS_IMPL(v.z)); }
 FORCEINLINE Vector4_base<float> abs(const Vector4_base<float>& v) { return Vector4_base<float>(ABS_IMPL(v.x), ABS_IMPL(v.y), ABS_IMPL(v.z), ABS_IMPL(v.z)); }
+
+FORCEINLINE float               sign(const float v) { return v > 0.f ? 1.f : v < 0.f ? -1.f : 0.f; }
+FORCEINLINE Vector2_base<float> sign(const Vector2_base<float>& v) { return Vector2_base<float>(sign(v.x), sign(v.y)); }
+FORCEINLINE Vector3_base<float> sign(const Vector3_base<float>& v) { return Vector3_base<float>(sign(v.x), sign(v.y), sign(v.z)); }
+FORCEINLINE Vector4_base<float> sign(const Vector4_base<float>& v) { return Vector4_base<float>(sign(v.x), sign(v.y), sign(v.z), sign(v.w)); }
 
 FORCEINLINE float               min(const float a, const float b) { return MIN_IMPL(a, b); }
 FORCEINLINE Vector2_base<float> min(const Vector2_base<float>& a, const Vector2_base<float>& b) { return Vector2_base<float>(MIN_IMPL(a.x, b.x), MIN_IMPL(a.y, b.y)); }

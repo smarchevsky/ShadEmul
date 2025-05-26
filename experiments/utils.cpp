@@ -66,6 +66,7 @@ void WriteBMP(const char* filename, int width, int height, const uint8_t* pixelD
     file.close();
 }
 
+// swizzlers are already done, in "/include/swizzlers" folder
 void makeSwizzlers(uint thisVecSize, uint outVecSize)
 {
     assert(thisVecSize <= 4 && outVecSize <= 4);

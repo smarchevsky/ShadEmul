@@ -305,6 +305,10 @@ struct GridCell {
     std::array<float, 8> val;
 };
 
+struct MarchingTriangle {
+    vec3 p[3];
+};
+
 vec3 VertexInterp(float isolevel, vec3 p1, vec3 p2, float val1, float val2)
 {
     float mu;
@@ -320,7 +324,7 @@ vec3 VertexInterp(float isolevel, vec3 p1, vec3 p2, float val1, float val2)
 }
 
 // Marching Cubes algorithm for a single grid cell
-void MarchCube(std::vector<MarchingCubes::Triangle>& triangles, GridCell grid, float isolevel = 0.f)
+void MarchCube(std::vector<MarchingTriangle>& triangles, GridCell grid, float isolevel = 0.f)
 {
     int cubeindex = 0;
     // Determine the 8-bit cube index
@@ -378,7 +382,7 @@ void MarchCube(std::vector<MarchingCubes::Triangle>& triangles, GridCell grid, f
 
     // Build the triangles from the triTable
     for (int i = 0; triTable[cubeindex][i] != -1; i += 3) {
-        MarchingCubes::Triangle t;
+        MarchingTriangle t;
         t.p[0] = intersectionPoints[triTable[cubeindex][i]];
         t.p[1] = intersectionPoints[triTable[cubeindex][i + 1]];
         t.p[2] = intersectionPoints[triTable[cubeindex][i + 2]];
@@ -394,7 +398,7 @@ const vec3 gridCellOffset[8] {
 struct Model3D {
     typedef std::array<int, 3> Triangle;
 
-    Model3D(std::vector<MarchingCubes::Triangle> marchingTriangles)
+    Model3D(std::vector<MarchingTriangle> marchingTriangles)
     {
         std::unordered_map<vec3, int> pointHashMap;
         int indexOffset = 0;
@@ -447,45 +451,53 @@ struct Model3D {
 };
 }
 
-void MarchingCubes::march(std::function<float(vec3)> func)
+void MarchingCubes::march(vec3 resolution, vec3 bMin, vec3 bMax,
+    const char* filePath, std::function<float(vec3)> func)
 {
-    std::vector<Triangle> triangles;
+    using namespace std::chrono;
+    auto timestampStart = high_resolution_clock::now();
 
-    const int resX = 256;
-    const int resY = 128;
-    const int resZ = 128;
-    const vec3 res3(resX, resY, resZ);
-    vec3 bounds(5, 2.5, 2.5);
+    auto logTimer = [&](const char* msg) {
+        std::cout << msg
+                  << (duration_cast<milliseconds>(high_resolution_clock::now() - timestampStart)).count() / 1000.f
+                  << "s." << std::endl;
+        timestampStart = high_resolution_clock::now();
+    };
 
-    auto start = std::chrono::high_resolution_clock::now();
-
+    std::vector<MarchingTriangle> triangles;
     std::unordered_map<vec3, float> cachedValues;
 
-    for (int x = 0; x < resX; ++x) {
-        for (int y = 0; y < resY; ++y) {
-            for (int z = 0; z < resZ; ++z) {
+    std::cout << "Marching progress:";
+    for (int x = 0; x < resolution.x; ++x) {
+        std::cout << '|';
+        for (int y = 0; y < resolution.y; ++y) {
+            for (int z = 0; z < resolution.z; ++z) {
+
                 GridCell gridCell;
                 for (int i = 0; i < 8; ++i) {
-                    gridCell.p[i] = ((vec3(x, y, z) + gridCellOffset[i]) / res3 - 0.5f) * bounds;
-                    auto it = cachedValues.find(gridCell.p[i]);
+                    const vec3 fraction = (vec3(x, y, z) + gridCellOffset[i]) / resolution;
+                    gridCell.p[i] = lerp(bMin, bMax, fraction);
 
+                    auto it = cachedValues.find(gridCell.p[i]);
                     if (it == cachedValues.end()) {
                         gridCell.val[i] = func(gridCell.p[i]);
                         cachedValues[gridCell.p[i]] = gridCell.val[i];
                     } else {
                         gridCell.val[i] = it->second;
                     }
-                    MarchCube(triangles, gridCell);
                 }
+
+                MarchCube(triangles, gridCell);
             }
         }
     }
 
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now() - start);
+    std::cout << std::endl;
+    logTimer("Marching cubes generation time: ");
 
     Model3D model(triangles);
-    model.writeToObj("test.obj");
+    logTimer("Remove vertex duplicates time: ");
 
-    std::cout << "Execution time: " << duration.count() / 1000.f << " seconds" << std::endl;
+    model.writeToObj(filePath);
+    logTimer("Write to file time: ");
 }

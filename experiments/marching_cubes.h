@@ -6,11 +6,7 @@
 
 class MarchingCubes {
 public:
-    struct Triangle {
-        vec3 p[3];
-    };
-
-    static void march(std::function<float(vec3)> func);
+    static void march(vec3 resolution, vec3 bMin, vec3 bMax, const char* filePath, std::function<float(vec3)> func);
 };
 
 #endif // MARCHING_CUBES_H

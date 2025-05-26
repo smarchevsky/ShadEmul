@@ -62,7 +62,7 @@ void WriteBMP(const char* filename, int width, int height, const uint8_t* pixelD
         file.write(reinterpret_cast<const char*>(row), width * 3);
         file.write(reinterpret_cast<const char*>(padding), rowPadding);
     }
-
+    std::cout << "Image written: " << filename << std::endl;
     file.close();
 }
 
